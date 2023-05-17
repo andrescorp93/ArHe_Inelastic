@@ -94,6 +94,7 @@ for f in so_outs:
 
 r = np.array([float(s) for s in rs])
 els = np.array(els)
+
 for i in range(len(r)):
     re_psi = []
     im_psi = []
@@ -112,14 +113,14 @@ for i in range(len(r)):
         dmy_im_psi.append([float(s) for s in dmys[i][j+1].split()])
         dmz_re_psi.append([float(s) for s in dmzs[i][j].split()])
         dmz_im_psi.append([float(s) for s in dmzs[i][j+1].split()])
-    repsils.append(np.array(np.abs(re_psi)))
-    impsils.append(np.array(np.abs(im_psi)))
-    redmx.append(np.array(np.abs(dmx_re_psi)))
-    imdmx.append(np.array(np.abs(dmx_im_psi)))
-    redmy.append(np.array(np.abs(dmy_re_psi)))
-    imdmy.append(np.array(np.abs(dmy_im_psi)))
-    redmz.append(np.array(np.abs(dmz_re_psi)))
-    imdmz.append(np.array(np.abs(dmz_im_psi)))
+    repsils.append(np.array(re_psi))
+    impsils.append(np.array(im_psi))
+    redmx.append(np.array(dmx_re_psi))
+    imdmx.append(np.array(dmx_im_psi))
+    redmy.append(np.array(dmy_re_psi))
+    imdmy.append(np.array(dmy_im_psi))
+    redmz.append(np.array(dmz_re_psi))
+    imdmz.append(np.array(dmz_im_psi))
 
 repsils = np.array(repsils)
 impsils = np.array(impsils)
@@ -133,15 +134,48 @@ psi = repsils+1j*impsils
 dmx = redmx + 1j*imdmx
 dmy = redmy + 1j*imdmy
 dmz = redmz + 1j*imdmz
-dm2 = np.power(np.abs(dmx), 2) + np.power(np.abs(dmy), 2) + np.power(np.abs(dmz), 2)
+
+for i in range(49):
+    for j in range(49):
+        psi[:,i,j] = np.exp(1j*np.abs(np.angle(psi[-1,i,j])))*np.abs(psi[:,i,j])
+
+nacmes = {}
 
 for f in nacme_outs:
     txt = open(f).readlines()
-    print(txt)
+    t = f[11:-4].split('_')
+    tail = t[0] + '.' + ('0' if t[1] == 'sing' else '1')
+    head = ['|'.join([i + '.' + tail for i in s[-2:]]) for s in txt[2].split()[1:]]
+    a = []
+    for s in txt[3:]:
+        a.append([float(n) for n in s.split()[1:]])
+    a = np.array(a).T
+    for i in range(len(head)):
+        nacmes[head[i]] = a[i]
 
 psi_a1 = psi[:,0:13,0:13]
 psi_b1 = psi[:,13:25,13:25]
 psi_b2 = psi[:,25:37,25:37]
 psi_a2 = psi[:,37:49,37:49]
 
+# for i in range(13):
+#     for j in range(13):
+#         if all([np.abs(np.real(c)) >= 1e-8 for c in psi_a1[:,i,j]]) or all([np.abs(np.imag(c)) >= 1e-8 for c in psi_a1[:,i,j]]):
+#             plt.plot(r,np.abs(psi_a1[:,i,j]), label=f'|<{j+1}|{in_states_a1[i]}>|')
+#     plt.legend()
+#     plt.show()
+
+# for i in range(13):
+#     for j in range(13):
+#         if all([np.abs(np.imag(c)) >= 1e-8 for c in psi_a1[:,i,j]]):
+#             plt.plot(r,np.abs(np.imag(psi_a1[:,i,j])), label=f'Im<{j+1}|{in_states_a1[i]}>')
+
+els = (els - np.min(els[:,0]))*219474.63
+for i in range(len(els[0])):
+    fname = f'e{i+1}.txt'
+    header = f'r\te{i+1}'
+    res = np.zeros((len(r),2))
+    res[:,0] = r
+    res[:,1] = els[:,i]
+    np.savetxt(fname, res, header=header)
 
