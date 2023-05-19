@@ -39,7 +39,7 @@ def initial_value_wkb(x, u1, u2, f1, f2, e, j):
     
 
 def initial_value_j(x, j):
-    return np.array([1., j/x, 1., j/x])
+    return np.array([1., j/x])
     
 
 def ccequations(y, e, j, u01, u02, eps1, eps2, d, alpha, x0, x):
@@ -68,4 +68,31 @@ def phase_calc(psi, dpsi, r, u, e, j):
     A = (k * np.sin(k * rm) * psi_rm + np.cos(k * rm) * psi_p) / k
     B = (k * np.cos(k * rm) * psi_rm - np.sin(k * rm) * psi_p) / k
     return np.arctan(B / A)
+
+
+def mul_initial_value_j(x, es, js):
+    ejpairs = np.transpose([np.tile(es, len(js)), np.repeat(js, len(es))])
+    f = np.ones(2*len(ejpairs))
+    f[1::2] = ejpairs[:,1] / x
+    return f
+    
+
+def mulelequations(y, es, js, u, x):
+    ejpairs = np.transpose([np.tile(es, len(js)), np.repeat(js, len(es))])
+    f = np.zeros(len(y))
+    f[::2] = y[1::2]
+    f[1::2] = -k2(x, u, ejpairs[:,0], ejpairs[:,1]) * y[::2]
+    return f
+
+
+def mul_phase_calc(psi, dpsi, r, u, es, js):
+    ejpairs = np.transpose([np.tile(es, len(js)), np.repeat(js, len(es))])
+    rm = np.max(r)
+    k = np.sqrt(np.abs(k2(rm, u, ejpairs[:,0], ejpairs[:,1])))
+    psi_rm = psi[:, np.argmax(r)]
+    psi_p = dpsi[:, np.argmax(r)]
+    A = (k * np.sin(k * rm) * psi_rm + np.cos(k * rm) * psi_p) / k
+    B = (k * np.cos(k * rm) * psi_rm - np.sin(k * rm) * psi_p) / k
+    return np.arctan(B / A)
+
 

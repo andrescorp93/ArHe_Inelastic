@@ -7,28 +7,24 @@ from funcs import *
 a = np.loadtxt('e1.txt')
 rtab = a[:,0]
 utab = a[:,1] / 4.637
-# u = lambda x: np.interp(x, rtab, utab)
-u = CubicSpline(rtab, utab)
+u1 = lambda x: np.interp(x, rtab, utab)
+u2 = CubicSpline(rtab, utab)
 r = np.arange(np.min(rtab), np.max(rtab), 0.005)
 
-en = np.arange(50., 2050., 2.)
-js = np.array([0., 20])
-# en = np.array([10.])
-phases = np.zeros(len(en))
-
+# en = np.arange(50., 2050., 2.)
+js = np.arange(0,51,1)
+en = np.arange(5., 1505., 5.)
+# phases_lin = np.zeros(len(en))
+# phases_cub = np.zeros(len(en))
+ejpairs = np.transpose([np.tile(en, len(js)), np.repeat(js, len(en))])
 # sm = np.zeros((len(en), 2, 2), dtype=np.complex128)
-for j in js:
-    for i in range(len(en)):
-        e = en[i]
-        sol_elastic = solve_ivp(lambda t, y: elequations(y, e, j, u, t), (np.min(rtab), np.max(rtab)),
-                                initial_value_j(np.min(rtab), j), t_eval=r)
-        psi = sol_elastic.y[0]
-        dpsi = sol_elastic.y[1]
-        phases[i] = phase_calc(psi, dpsi, r, u, e, j)
-        # plt.plot(r, psi)
-        # plt.plot(r, dpsi)
-    plt.plot(en,np.sin(phases)**2, label=f'j={j}')
+sol_elastic_cub = solve_ivp(lambda t, y: mulelequations(y, en, js, u2, t), (np.min(rtab), np.max(rtab)),
+                                    mul_initial_value_j(np.min(rtab), en, js), t_eval=r)
+psi_cub = sol_elastic_cub.y[::2]
+dpsi_cub = sol_elastic_cub.y[1::2]
 
-plt.legend()
-plt.show()
+print(mul_phase_calc(psi_cub, dpsi_cub, r, u2, en, js))
+
+# plt.legend()
+# plt.show()
         
