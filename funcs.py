@@ -1,5 +1,5 @@
 import numpy as np
-
+from numba import njit
 
 def model_potential(u0, eps, x):
     return (u0 + eps * np.power(x, -6)) / 4.637  # hbar^2/(2*mu*(1A^2)) = 4.637 cm-1
@@ -71,28 +71,37 @@ def phase_calc(psi, dpsi, r, u, e, j):
 
 
 def mul_initial_value_j(x, es, js):
-    ejpairs = np.transpose([np.tile(es, len(js)), np.repeat(js, len(es))])
+    ejpairs = np.transpose([np.tile(js, len(es)), np.repeat(es, len(js))])
     f = np.ones(2*len(ejpairs))
-    f[1::2] = ejpairs[:,1] / x
+    f[1::2] = ejpairs[:,0] / x
     return f
-    
 
+    
 def mulelequations(y, es, js, u, x):
-    ejpairs = np.transpose([np.tile(es, len(js)), np.repeat(js, len(es))])
+    ejpairs = np.transpose([np.tile(js, len(es)), np.repeat(es, len(js))])
     f = np.zeros(len(y))
     f[::2] = y[1::2]
-    f[1::2] = -k2(x, u, ejpairs[:,0], ejpairs[:,1]) * y[::2]
+    f[1::2] = -k2(x, u, ejpairs[:,1], ejpairs[:,0]) * y[::2]
     return f
 
 
-def mul_phase_calc(psi, dpsi, r, u, es, js):
-    ejpairs = np.transpose([np.tile(es, len(js)), np.repeat(js, len(es))])
+def mul_sigma_calc(psi, dpsi, r, u, es, js):
+    ejpairs = np.transpose([np.tile(js, len(es)), np.repeat(es, len(js))])
     rm = np.max(r)
-    k = np.sqrt(np.abs(k2(rm, u, ejpairs[:,0], ejpairs[:,1])))
+    k = np.sqrt(ejpairs[:,1])
     psi_rm = psi[:, np.argmax(r)]
     psi_p = dpsi[:, np.argmax(r)]
-    A = (k * np.sin(k * rm) * psi_rm + np.cos(k * rm) * psi_p) / k
-    B = (k * np.cos(k * rm) * psi_rm - np.sin(k * rm) * psi_p) / k
-    return np.arctan(B / A)
+    A = (k * np.sin(k * rm - (np.pi / 2) * ejpairs[:,0]) * psi_rm + np.cos(k * rm - (np.pi / 2) * ejpairs[:,0]) * psi_p) / k
+    B = (k * np.cos(k * rm - (np.pi / 2) * ejpairs[:,0]) * psi_rm - np.sin(k * rm - (np.pi / 2) * ejpairs[:,0]) * psi_p) / k
+    (2 * ejpairs[:,0] + 1) * (B**2 / (B**2 + A**2)) / ejpairs[:,1]
+    part_sigma = (2 * ejpairs[:,0] + 1) * (B**2 / (B**2 + A**2)) / ejpairs[:,1]
+    result = np.zeros(len(es))
+    for i in range(len(ejpairs)):
+        for j in range(len(es)):
+            if ejpairs[i,1] == es[j]:
+                result[j] += part_sigma[i]
+    return result
+        
+        
 
 
