@@ -72,8 +72,8 @@ def phase_calc(psi, dpsi, r, u, e, j):
 
 def mul_initial_value_j(x, es, js):
     ejpairs = np.transpose([np.tile(js, len(es)), np.repeat(es, len(js))])
-    f = np.ones(2*len(ejpairs))
-    f[1::2] = ejpairs[:,0] / x
+    f = np.ones(2*len(ejpairs))*x*1e-3
+    f[1::2] = ejpairs[:,0]*1e-3
     return f
 
     
@@ -93,7 +93,7 @@ def mul_sigma_calc(psi, dpsi, r, u, es, js):
     psi_p = dpsi[:, np.argmax(r)]
     A = (k * np.sin(k * rm - (np.pi / 2) * ejpairs[:,0]) * psi_rm + np.cos(k * rm - (np.pi / 2) * ejpairs[:,0]) * psi_p) / k
     B = (k * np.cos(k * rm - (np.pi / 2) * ejpairs[:,0]) * psi_rm - np.sin(k * rm - (np.pi / 2) * ejpairs[:,0]) * psi_p) / k
-    (2 * ejpairs[:,0] + 1) * (B**2 / (B**2 + A**2)) / ejpairs[:,1]
+    # (2 * ejpairs[:,0] + 1) * (B**2 / (B**2 + A**2)) / ejpairs[:,1]
     part_sigma = (2 * ejpairs[:,0] + 1) * (B**2 / (B**2 + A**2)) / ejpairs[:,1]
     result = np.zeros(len(es))
     for i in range(len(ejpairs)):
