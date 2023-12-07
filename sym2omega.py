@@ -168,6 +168,9 @@ for omega in range(4):
         ddrls[i] = np.dot(np.matrix(v).H, np.dot(ddromegaparsed[omega][i], v))
 
     if omega != 0:
+        if not os.path.exists(f'H_{omega}'):
+            os.mkdir(f'H_{omega}')
+        os.chdir(f'H_{omega}')
         get_matrix(r, hls, f'{omega}')
         get_nondiag(r, ddrls, f'ddR_{omega}', eps=1e-6, form='%.6f')
     else:
@@ -185,8 +188,15 @@ for omega in range(4):
             for j in range(len(sm)):
                 hlsminus[:,i,j] = hls[:,sm[i],sm[j]]
                 ddrlsminus[:,i,j] = ddrls[:,sm[i],sm[j]]
-        
+        if not os.path.exists(f'H_0_plus'):
+            os.mkdir(f'H_0_plus')
+        os.chdir(f'H_0_plus')
         get_matrix(r, hlsplus, '0_plus')
-        get_matrix(r, hlsminus, '0_minus')
         get_nondiag(r, ddrlsplus, 'ddR_0_plus', eps=1e-6, form='%.6f')
+        os.chdir('..')
+        if not os.path.exists(f'H_0_minus'):
+            os.mkdir(f'H_0_minus')
+        os.chdir(f'H_0_minus')
+        get_matrix(r, hlsminus, '0_minus')
         get_nondiag(r, ddrlsminus, 'ddR_0_minus', eps=1e-6, form='%.6f')
+    os.chdir('..')

@@ -4,8 +4,8 @@ from scipy.integrate import solve_ivp, simps
 from scipy.interpolate import CubicSpline
 from funcs import *
 
-print(open('scurves.txt', 'r').readline().split())
-a = np.loadtxt('scurves.txt', skiprows=1)
+print(open('H_test/H_test_diag.txt', 'r').readline().split())
+a = np.loadtxt('H_test/H_test_diag.txt', skiprows=1)
 rtab = a[:,0]
 utab = a[:,1:] / 4.637
 u = [CubicSpline(rtab, utab[:,i]-utab[-1,i]) for i in range(len(utab[0]))]
@@ -16,7 +16,6 @@ total = np.zeros((np.max(np.array([len(np.power(10, np.arange(0, np.log10(utab[0
 for n in range(len(utab[0])):
     logemax = np.log10(utab[0,n]-utab[-1,n])
     es = np.power(10, np.arange(0, logemax, 0.02))
-
     for i in range(len(es)):    
         en = np.array([es[i]])
         jmax = np.round(3*np.sqrt(es[i])*np.max(rtab)/4)
@@ -27,14 +26,14 @@ for n in range(len(utab[0])):
         psi_cub = sol_elastic_cub.y[::2]
         dpsi_cub = sol_elastic_cub.y[1::2]
 
-        total[i][2*n] = en * 4.637 * 1.42879
-        total[i][2*n+1] = 4 * np.pi * mul_sigma_calc(psi_cub, dpsi_cub, r, u[n], en, js)[0] * 1e-16
-        # print(f'{es[i] * 4.637}\t{result[i,1]}')
+        total[i][2*n] = (en+utab[-1,n]-utab[-1,0]) * 4.637 * 1.42879
+        total[i][2*n+1] = 4 * np.pi * mul_sigma_calc(psi_cub, dpsi_cub, r, en, js)[0] * 1e-16
+        print(f'{es[i] * 4.637}\t{total[i,1]}')
     
     
 
 # print(total)
-np.savetxt(f'sigmas_s.txt', total, fmt='%.6e', delimiter='\t')
+np.savetxt(f'H_test/sigmas.txt', total, fmt='%.6e', delimiter='\t')
     # plt.plot(np.log10(result[:,0]/1.42879), np.log10(result[:,1]))
 
 # plt.xlabel('log10(E)')

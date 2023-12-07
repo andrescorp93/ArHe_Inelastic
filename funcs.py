@@ -1,6 +1,8 @@
 import numpy as np
+import os
 from numba import njit
-from scipy.special import spherical_jn as sph_jn, spherical_yn as sph_yn, lpn
+from scipy.special import spherical_jn as sph_jn, spherical_yn as sph_yn
+from scipy.interpolate import CubicSpline
 
 state_keys = ['n', 'lam', 's', 'sz']
 
@@ -60,7 +62,7 @@ def ccequations(y, e, j, u01, u02, eps1, eps2, d, alpha, x0, x):
 def elequations(y, e, j, u, x):
     f = np.zeros(len(y))
     f[0] = y[1]
-    f[1] = -k2(x, u, e, j) * y[0]
+    f[1] = -(e - u(x) - j * (j + 1) / np.power(x, 2)) * y[0]
     return f
 
 
@@ -76,20 +78,21 @@ def phase_calc(psi, dpsi, r, u, e, j):
 
 def mul_initial_value_j(x, es, js):
     ejpairs = np.transpose([np.tile(js, len(es)), np.repeat(es, len(js))])
-    f = np.ones(2*len(ejpairs))*x*1e-3
-    f[1::2] = ejpairs[:,0]*1e-3
-    return f
+    f = np.ones(2*len(ejpairs))*x
+    f[1::2] = ejpairs[:,0]
+    return np.array(f, dtype=complex)
 
     
 def mulelequations(y, es, js, u, x):
     ejpairs = np.transpose([np.tile(js, len(es)), np.repeat(es, len(js))])
-    f = np.zeros(len(y))
+    f = np.zeros(len(y), dtype=complex)
     f[::2] = y[1::2]
-    f[1::2] = -k2(x, u, ejpairs[:,1], ejpairs[:,0]) * y[::2]
+    k2 = (ejpairs[:,1] - u(x) - ejpairs[:,0] * (ejpairs[:,0] + 1) / np.power(x, 2))
+    f[1::2] = -k2 * y[::2]
     return f
 
 
-def mul_sigma_calc(psi, dpsi, r, u, es, js):
+def mul_sigma_calc(psi, dpsi, r, es, js):
     ejpairs = np.transpose([np.tile(js, len(es)), np.repeat(es, len(js))])
     rm = np.max(r)
     k = np.sqrt(ejpairs[:,1])
@@ -143,8 +146,8 @@ def state_to_str(state):
     return f'{start},sz={finish}'
 
 
-def convert_c2v_cinfv(sym, lam):
-    return [0, 1 if sym == 1 else -1] if lam == 0 else ([lam, None] if sym in [1,2] else [-lam, None])
+# def convert_c2v_cinfv(sym, lam):
+#     return [0, 1 if sym == 1 else -1] if lam == 0 else ([lam, None] if sym in [1,2] else [-lam, None])
 
 
 def get_lambda(state):
@@ -219,3 +222,56 @@ def get_matrix(r, matrix, name, eps=1., form='%.2f'):
     get_diagonal(r, matrix, name, form=form)
     if len(matrix[-1]) > 1:
         get_nondiag(r, matrix, f'V_{name}', eps, form=form)
+
+
+def get_single(array, sub):
+    for f in array:
+        if f.find(sub) != -1:
+            return f
+
+
+def load_matrices(dir):
+    diagf = get_single(os.listdir(dir), 'diag')
+    nondiagf = [f for f in os.listdir(dir) if f.find('V') != -1]
+    ddrf = [f for f in os.listdir(dir) if f.find('ddR') != -1]
+
+    ids = open(f'{dir}/{diagf}').readlines()[0].split()
+    ediags = np.loadtxt(f'{dir}/{diagf}', skiprows=1)
+
+    r = ediags[:,0]
+    es = ediags[:,1:].transpose()
+    hls = np.zeros((len(r), len(ids)-1, len(ids)-1), dtype=complex)
+    ddrls = np.zeros((len(r), len(ids)-1, len(ids)-1), dtype=complex)
+    for i in range(len(es)):
+        hls[:,i,i] = es[i].copy()
+
+    for f in nondiagf:
+        nondiags = np.loadtxt(f'{dir}/{f}', skiprows=1).transpose()[1:]
+        ids = open(f'{dir}/{f}').readlines()[0].split()[1:]
+        for i in range(len(ids)):
+            k = [int(j) for j in ids[i][3:-1].split('|')[::2]]
+            if f.find('Re') != -1:
+                hls[:, k[0], k[1]] += nondiags[i]
+                hls[:, k[1], k[0]] += nondiags[i]
+            elif f.find('Im') != -1:
+                hls[:, k[0], k[1]] += 1j*nondiags[i]
+                hls[:, k[1], k[0]] += -1j*nondiags[i]
+
+    for f in ddrf:
+        nondiags = np.loadtxt(f'{dir}/{f}', skiprows=1).transpose()[1:]
+        ids = open(f'{dir}/{f}').readlines()[0].split()[1:]
+        for i in range(len(ids)):
+            k = [int(j) for j in ids[i][3:-1].split('|')[::2]]
+            if f.find('Re') != -1:
+                ddrls[:, k[0], k[1]] += nondiags[i]
+                ddrls[:, k[1], k[0]] += -nondiags[i]
+            elif f.find('Im') != -1:
+                ddrls[:, k[0], k[1]] += 1j*nondiags[i]
+                ddrls[:, k[1], k[0]] += -1j*nondiags[i]
+    
+    return r, hls, ddrls
+
+
+def matrix_funcs(r, hls, ddrls):
+    return CubicSpline(r, hls), CubicSpline(r, ddrls)
+
