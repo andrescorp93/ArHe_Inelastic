@@ -5,50 +5,12 @@ from scipy.integrate import solve_ivp, simps
 from scipy.special import riccati_jn, riccati_yn
 from numba import jit
 
-@jit(nopython=True)
-def extract_block_diag(a, n, k=0):
-    a = np.asarray(a)
-    if a.ndim != 2:
-        raise ValueError("Only 2-D arrays handled")
-    if not (n > 0):
-        raise ValueError("Must have n >= 0")
-
-    if k > 0:
-        a = a[:,n*k:] 
-    else:
-        a = a[-n*k:]
-
-    n_blocks = min(a.shape[0]//n, a.shape[1]//n)
-
-    new_shape = (n_blocks, n, n)
-    new_strides = (n*a.strides[0] + n*a.strides[1],
-                   a.strides[0], a.strides[1])
-
-    return np.lib.stride_tricks.as_strided(a, new_shape, new_strides)
-
-
-def inelq(e, l, h, ddr, psi, x):
-    f = np.zeros(len(psi), dtype=complex)
-    f[:(len(psi)//2)] = psi[(len(psi)//2):]
-    h1 = (e - l*(l+1) / x**2) * np.eye(len(psi)//2)
-    h2 = h(x) - ddr(x,1)
-    hu = -h1 - h2
-    hp = -2*ddr(x)
-    f[(len(psi)//2):] = (np.matmul(hu, psi[:(len(psi)//2)].transpose()) + np.matmul(hp, psi[(len(psi)//2):].transpose())).transpose()
-    return f
-
 
 def get_state_curve(h, i, x):
     return np.real(np.diag(h(x))[i])
 
 
-def mat_power(m, p):
-    lam, v = np.linalg.eig(m)
-    f = np.diag(np.power(lam, p))
-    return np.dot(v, np.dot(f, np.linalg.inv(v)))
-
-
-dir = 'H_test_3'
+dir = 'H_0_plus_p'
 r, hls, ddrls = load_matrices(dir)
 emin = hls[-1,0,0]
 n = len(hls[0])
@@ -60,7 +22,7 @@ emax = np.abs(np.array(hfunc(r[0])[-1,-1]))
 es = np.power(10, np.arange(0, np.log10(1.5*emax), 0.01))
 # es = np.power(10, np.array([np.log10(emin), np.log10(emax)]))
 # es = np.power(10, np.array([(np.log10(emin)+np.log10(emax))/2]))
-x = np.arange(np.min(r), np.max(r), 0.005)
+x = np.arange(np.min(r), np.max(r)+0.005, 0.005)
 sigmas = np.zeros((len(es), n, n))
 headerfinal = 'E, cm-1\t'
 for i in range(n):
@@ -96,5 +58,3 @@ for i in range(n):
         tofile[:,i*n+j+1] = sigmas[:,i,j]
 
 np.savetxt(f'{dir}/sigmas_total.txt', tofile, fmt='%.6e', delimiter='\t', header=headerfinal, comments='')
-
-print(np.diag(hls[-1]))
