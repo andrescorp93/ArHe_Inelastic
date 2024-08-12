@@ -107,7 +107,7 @@ def mul_sigma_calc(psi, dpsi, r, es, js):
     g = psi_p/psi_rm
     B = (g * rm - 1) * jl - k * rm * djl
     A = (g * rm - 1) * yl - k * rm * dyl
-    part_sigma = (2 * ejpairs[:,0] + 1) * (B**2 / (B**2 + A**2)) / ejpairs[:,1]
+    part_sigma = (2 * ejpairs[:,0] + 1) * (np.abs(B)**2 / (np.abs(B)**2 + np.abs(B)**2)) / ejpairs[:,1]
     # print(np.sqrt(B**2 + A**2)/k, psi_rm)
     result = np.zeros(len(es))
     for i in range(len(ejpairs)):
@@ -119,29 +119,16 @@ def mul_sigma_calc(psi, dpsi, r, es, js):
         
 def norm_sol(r, es, js, u):
     ejpairs = np.transpose([np.tile(js, len(es)), np.repeat(es, len(js))])
-    rm = np.max(r)
+    h = np.diff(r)[-1]
     k = np.sqrt(ejpairs[:,1])
-    # print(np.shape(psi))
     sol_elastic = solve_ivp(lambda t, y: mulelequations(y, es, js, u, t), (np.min(r), np.max(r)),
                                             mul_initial_value_j(np.min(r), es, js), t_eval=r)
     psi = sol_elastic.y[::2]
     dpsi = sol_elastic.y[1::2]
-    psi_rm = psi[:, np.argmax(r)]
-    psi_p = dpsi[:, np.argmax(r)]
-    jl = np.array([sph_jn(int(j), np.sqrt(ks)*rm) for j,ks in ejpairs])
-    yl = np.array([sph_yn(int(j), np.sqrt(ks)*rm) for j,ks in ejpairs])
-    djl = np.array([sph_jn(int(j), np.sqrt(ks)*rm, derivative=True) for j,ks in ejpairs])
-    dyl = np.array([sph_yn(int(j), np.sqrt(ks)*rm, derivative=True) for j,ks in ejpairs])
-    g = psi_p/psi_rm
-    B = (g * rm - 1) * jl - k * rm * djl
-    A = (g * rm - 1) * yl - k * rm * dyl
-    deltal = np.arctan(B/A)
-    cosl = np.cos(deltal)
-    sinl = np.sin(deltal)
-    nl = k*rm*(cosl*jl-sinl*yl)
-    cl = np.abs(psi_rm/nl)
-    u = np.array([psi[i]/cl[i] for i in range(len(cl))])
-    du = np.array([dpsi[i]/cl[i] for i in range(len(cl))])
+    m = int(np.round(2*np.pi/(h*k[0])))
+    cl = np.array([np.max(psi[i,-m:]) for i in range(len(psi))])
+    u = np.array([psi[i]/(np.sqrt(k[i])*cl[i]) for i in range(len(cl))])
+    du = np.array([dpsi[i]/(np.sqrt(k[i])*cl[i]) for i in range(len(cl))])
     return u, du
         
         

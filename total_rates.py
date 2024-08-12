@@ -24,7 +24,7 @@ for d in dirs:
     group = d[-1]
     omega = d[2:-2] if d[2] != '0' else ('0+' if d[2:5]=='0_p' else '0-')
     states = labels[group][omega]
-    data = np.loadtxt(f'{d}/rate_const.txt', skiprows=1).transpose()
+    data = np.loadtxt(f'{d}/rate_const_new.txt', skiprows=1).transpose()
     if 'T' not in constants.keys():
         constants['T'] = data[0]
     n = len(states)
