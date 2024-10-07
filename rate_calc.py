@@ -9,14 +9,14 @@ velcoeff = 3534.19 # sqrt(3kB/mu)
 def maxwell(theta, T):
     return 2*np.sqrt(theta/T)*np.exp(-theta/T) / (np.sqrt(np.pi)*T)
 
-dir = 'H_0_minus_p'
+dir = 'H_2_p'
 r, hls, ddrls = load_matrices(dir)
 emin = hls[-1,0,0]
 n = len(hls[0])
 
 thres = np.loadtxt(f'{dir}/{dir}_diag.txt', skiprows=1)[-1,1:]
 
-sig_mat = np.loadtxt(f'{dir}/sigmas_total_new.txt', skiprows=1)
+sig_mat = np.loadtxt(f'{dir}/sigmas_total_exp.txt', skiprows=1)
 
 e = sig_mat[:,0]
 sigmas = np.zeros((len(e),n,n))
@@ -53,7 +53,7 @@ for i in range(n):
             tofile[:,m+1] = coeffs[:,i,j]
             m += 1
 
-np.savetxt(f'{dir}/rate_const_new.txt', tofile, fmt='%.6e', delimiter='\t', header=headerfinal, comments='')
+np.savetxt(f'{dir}/rate_const_exp.txt', tofile, fmt='%.6e', delimiter='\t', header=headerfinal, comments='')
 # for i in range(n):
 #     for j in range(i+1, n):
 #         plt.plot(1/temperatures, coeffs[:,i,j], label=f'{i}->{j}')

@@ -2,10 +2,56 @@ import numpy as np
 import os
 from numba import njit
 from scipy.special import spherical_jn as sph_jn, spherical_yn as sph_yn
-from scipy.interpolate import CubicSpline
+from scipy.interpolate import CubicSpline, make_interp_spline
 from scipy.integrate import solve_ivp
+import matplotlib.pyplot as plt
+import matplotlib.lines as mlines
 
 state_keys = ['n', 'lam', 's', 'sz']
+
+labels = {'s': {'0-': ['1s5', '1s3'],
+                '0+': ['1s4', '1s2'],
+                '1': ['1s5', '1s4', '1s2'],
+                '2': ['1s5']},
+          'p': {'0-': ['2p10', '2p9', '2p7', '2p4', '2p2'],
+                '0+': ['2p8', '2p6', '2p5', '2p3', '2p1'],
+                '1': ['2p10', '2p9', '2p8', '2p7', '2p6', '2p4', '2p3', '2p2'],
+                '2': ['2p9', '2p8', '2p6', '2p3'],
+                '3': ['2p9']}}
+
+weights_states = {'1s5': 5, '1s4': 3, '1s3': 1, '1s2': 3,
+                  '2p10': 3, '2p9': 7, '2p8': 5, '2p7': 3,
+                  '2p6': 5, '2p5': 1, '2p4': 3, '2p3': 5,
+                  '2p2': 3, '2p1': 1}
+
+weights_omegas = {'0-': 1, '0+': 1, '1': 2, '2': 2}
+
+colors = {'1s5': '#a6cee3',
+          '1s4': '#1f78b4',
+          '1s3': '#b2df8a',
+          '1s2': '#33a02c'}
+
+colorp = {'2p10': '#a6cee3',
+          '2p9': '#1f78b4',
+          '2p8': '#b2df8a',
+          '2p7': '#33a02c',
+          '2p6': '#fb9a99',
+          '2p5': '#e31a1c',
+          '2p4': '#fdbf6f',
+          '2p3': '#ff7f00',
+          '2p2': '#cab2d6',
+          '2p1': '#6a3d9a'}
+
+lines = {'0+':'-',
+         '0-':'--',
+         '1':'-.',
+         '2':':',
+         '3':(5, (10, 3))}
+
+spatchom = [mlines.Line2D([], [], color='black', linestyle=lines[k], label=f'$\Omega = {k}$') for k in lines.keys() if int(k[0]) < 3]
+spatchst = [mlines.Line2D([], [], color=colors[k], linestyle='-', label=f'${k[:2]}_{{{k[2:]}}}$') for k in colors.keys() if int(k[2:]) > 3]
+ppatchom = [mlines.Line2D([], [], color='black', linestyle=lines[k], label=f'$\Omega = {k}$') for k in lines.keys()]
+ppatchst = [mlines.Line2D([], [], color=colorp[k], linestyle='-', label=f'${k[:2]}_{{{k[2:]}}}$') for k in colorp.keys() if int(k[2:]) > 7]
 
 
 def model_potential(u0, eps, x):
@@ -97,7 +143,6 @@ def mul_sigma_calc(psi, dpsi, r, es, js):
     ejpairs = np.transpose([np.tile(js, len(es)), np.repeat(es, len(js))])
     rm = np.max(r)
     k = np.sqrt(ejpairs[:,1])
-    # print(np.shape(psi))
     psi_rm = psi[:, np.argmax(r)]
     psi_p = dpsi[:, np.argmax(r)]
     jl = np.array([sph_jn(int(j), np.sqrt(ks)*rm) for j,ks in ejpairs])
@@ -107,15 +152,30 @@ def mul_sigma_calc(psi, dpsi, r, es, js):
     g = psi_p/psi_rm
     B = (g * rm - 1) * jl - k * rm * djl
     A = (g * rm - 1) * yl - k * rm * dyl
-    part_sigma = (2 * ejpairs[:,0] + 1) * (np.abs(B)**2 / (np.abs(B)**2 + np.abs(B)**2)) / ejpairs[:,1]
-    # print(np.sqrt(B**2 + A**2)/k, psi_rm)
+    part_sigma = np.abs((2 * ejpairs[:,0] + 1) * (B**2 / (A**2 + B**2)) / ejpairs[:,1])
     result = np.zeros(len(es))
     for i in range(len(ejpairs)):
         for j in range(len(es)):
             if ejpairs[i,1] == es[j]:
                 result[j] += part_sigma[i]
     return result
-        
+
+
+def s_phase_calc(psi, dpsi, r, es, js):
+    ejpairs = np.transpose([np.tile(js, len(es)), np.repeat(es, len(js))])
+    rm = np.max(r)
+    k = np.sqrt(ejpairs[:,1])
+    psi_rm = psi[:, np.argmax(r)]
+    psi_p = dpsi[:, np.argmax(r)]
+    jl = np.array([sph_jn(int(j), np.sqrt(ks)*rm) for j,ks in ejpairs])
+    yl = np.array([sph_yn(int(j), np.sqrt(ks)*rm) for j,ks in ejpairs])
+    djl = np.array([sph_jn(int(j), np.sqrt(ks)*rm, derivative=True) for j,ks in ejpairs])
+    dyl = np.array([sph_yn(int(j), np.sqrt(ks)*rm, derivative=True) for j,ks in ejpairs])
+    g = psi_p/psi_rm
+    B = (g * rm - 1) * jl - k * rm * djl
+    A = (g * rm - 1) * yl - k * rm * dyl
+    return np.arctan(B/A)
+
         
 def norm_sol(r, es, js, u):
     ejpairs = np.transpose([np.tile(js, len(es)), np.repeat(es, len(js))])
@@ -162,10 +222,6 @@ def state_to_str(state):
     start = str(state['n']) + '.' +  str(state['sym']) + '.' +  str(state['s'])
     finish = state['sz']
     return f'{start},sz={finish}'
-
-
-# def convert_c2v_cinfv(sym, lam):
-#     return [0, 1 if sym == 1 else -1] if lam == 0 else ([lam, None] if sym in [1,2] else [-lam, None])
 
 
 def get_lambda(state):
@@ -293,3 +349,194 @@ def load_matrices(dir):
 def matrix_funcs(r, hls, ddrls):
     return CubicSpline(r, hls), CubicSpline(r, ddrls)
 
+
+def energy_plot(dirgroup, palette):
+    for dir in dirgroup:
+        r, hls, ddrls = load_matrices(dir)
+        n = len(hls[0])
+        group = dir[-1]
+        omega = dir[2:-2] if dir[2] != '0' else ('0+' if dir[2:5]=='0_p' else '0-')
+        signs = labels[group][omega]
+        for i in range(n):
+            if (signs[i][1] == 'p' and int(signs[i][2:]) > 7) or (signs[i][1] == 's' and int(signs[i][2:]) > 3):
+                plt.plot(r, np.real(hls[:,i,i]), ls=lines[omega], color=palette[signs[i]])
+
+    plt.grid(visible=False)
+    if group == 'p':
+        legend1 = plt.legend(handles=ppatchst, loc=1)
+        plt.legend(handles=ppatchom, loc=9)
+        plt.gca().add_artist(legend1)
+    elif group == 's':
+        legend1 = plt.legend(handles=spatchst, loc=1)
+        plt.legend(handles=spatchom, loc=9)
+        plt.gca().add_artist(legend1)
+    plt.xlabel('R, \AA')
+    plt.ylabel('E, cm${}^{-1}$')
+    plt.savefig(f'images/Energies_{group}.eps')
+    plt.close()
+
+
+def so_plot(dirgroup):
+    for dir in dirgroup:
+        omega = dir[2:-2] if dir[2] != '0' else ('0+' if dir[2:5]=='0_p' else '0-')
+        r, hls, ddrls = load_matrices(dir)
+        n = len(hls[0])
+        group = dir[-1]
+
+        signs = labels[group][omega]
+        for i in range(n):
+            for j in range(i+1,n):
+                if (group == 'p' and int(signs[i][2:]) > 7 and int(signs[j][2:]) > 7) or (signs[i][1] == 's' and int(signs[i][2:]) > 3 and int(signs[j][2:]) > 3):
+                    signre = f'$\Re V_{{{signs[i][:2]}_{{{signs[i][2:]}}}, {signs[j][:2]}_{{{signs[j][2:]}}}}}$'
+                    signim = f'$\Im V_{{{signs[i][:2]}_{{{signs[i][2:]}}}, {signs[j][:2]}_{{{signs[j][2:]}}}}}$'
+                    if any([np.abs(c) >= 1e-2 for c in np.real(hls[:,i,j])]):
+                        plt.plot(r, np.real(hls[:,i,j]), label=f'{signre}, $\Omega={omega}$', ls=lines[omega])
+                    if any([np.abs(c) >= 1e-2 for c in np.imag(hls[:,i,j])]):
+                        plt.plot(r, np.imag(hls[:,i,j]), label=f'{signim}, $\Omega={omega}$', ls=lines[omega])
+    plt.xlabel('R, \AA')
+    plt.ylabel('V, cm${}^{-1}$')
+    plt.legend()
+    plt.savefig(f'images/Spin-orbit_{group}.eps')
+    plt.close()
+
+
+def ddr_plot(dirgroup):
+    for dir in dirgroup:
+        omega = dir[2:-2] if dir[2] != '0' else ('0+' if dir[2:5]=='0_p' else '0-')
+        r, hls, ddrls = load_matrices(dir)
+        n = len(hls[0])
+        
+        group = dir[-1]
+        signs = labels[group][omega]
+        for i in range(n):
+            for j in range(i+1,n):
+                if (group == 'p' and int(signs[i][2:]) > 7 and int(signs[j][2:]) > 7) or (signs[i][1] == 's' and int(signs[i][2:]) > 3 and int(signs[j][2:]) > 3):
+                    signre = f'$\Re m_{{{signs[i][:2]}_{{{signs[i][2:]}}}, {signs[j][:2]}_{{{signs[j][2:]}}}}}$'
+                    signim = f'$\Im m_{{{signs[i][:2]}_{{{signs[i][2:]}}}, {signs[j][:2]}_{{{signs[j][2:]}}}}}$'
+                    if any([np.abs(c) >= 1e-2 for c in np.real(ddrls[:,i,j])]):
+                        plt.plot(r, np.real(ddrls[:,i,j]), label=f'{signre}, $\Omega={omega}$', ls=lines[omega])
+                    if any([np.abs(c) >= 1e-2 for c in np.imag(ddrls[:,i,j])]):
+                        plt.plot(r, np.imag(ddrls[:,i,j]), label=f'{signim}, $\Omega={omega}$', ls=lines[omega])
+    plt.xlabel('R, \AA')
+    plt.ylabel('m, \AA ${}^{-1}$')
+    plt.legend()
+    plt.savefig(f'images/Nondiag_{group}.eps')
+    plt.close()
+
+
+def elastic_plot(dirgroup, palette):
+    emax = []
+    emin = []
+    for dir in dirgroup:
+        r, hls, ddrls = load_matrices(dir)
+        n = len(hls[0])
+        sig_mat = np.loadtxt(f'{dir}/sigmas_total_new.txt', skiprows=1)
+        e = sig_mat[:,0]
+        emax.append(np.max(e))
+        emin.append(np.min(e))
+        sigmas = np.zeros((len(e),n,n))
+        for i in range(n):
+            for j in range(n):
+                sigmas[:,i,j] = sig_mat[:,i*n+j+1]
+        group = dir[-1]
+        omega = dir[2:-2] if dir[2] != '0' else ('0+' if dir[2:5]=='0_p' else '0-')
+        signs = labels[group][omega]
+        for i in range(n):
+            if (signs[i][1] == 'p' and int(signs[i][2:]) > 7) or (signs[i][1] == 's' and int(signs[i][2:]) > 3):
+                eplot = np.linspace(np.min(e[np.argwhere(sigmas[:,i,i] != 0)]), np.max(e[np.argwhere(sigmas[:,i,i] != 0)]), 600)
+                spl = make_interp_spline(e[np.argwhere(sigmas[:,i,i] != 0)].transpose()[0], np.log10(sigmas[np.argwhere(sigmas[:,i,i] != 0),i,i].transpose()[0]))
+                sigmaplot = np.power(10, spl(eplot))
+                plt.plot(eplot-np.real(hls[-1,i,i]), sigmaplot*1.e14, ls=lines[omega], color=palette[signs[i]])
+    # plt.xlim(-100, np.min(np.array(emax))-np.min(np.array(emin))+300)
+    plt.grid(visible=False)
+    plt.xlabel('$E_{col}$, cm${}^{-1}$')
+    plt.ylabel('$\sigma_{t}$, $10^{-14}$ cm${}^{2}$')
+    if group == 'p':
+        legend1 = plt.legend(handles=ppatchst, loc=1)
+        plt.legend(handles=ppatchom, loc=9)
+        plt.gca().add_artist(legend1)
+    elif group == 's':
+        legend1 = plt.legend(handles=spatchst, loc=1)
+        plt.legend(handles=spatchom, loc=9)
+        plt.gca().add_artist(legend1)
+    plt.savefig(f'images/Elastic_{group}.eps')
+    plt.close()
+
+
+def diffuse_plot(dirgroup, palette):
+    emax = []
+    emin = []
+    for dir in dirgroup:
+        r, hls, ddrls = load_matrices(dir)
+        n = len(hls[0])
+        sig_mat = np.loadtxt(f'{dir}/sigmas_diff.txt', skiprows=1)
+        e = sig_mat[:,0]
+        emax.append(np.max(e))
+        emin.append(np.min(e))
+        sigmas = np.zeros((len(e),n))
+        for i in range(n):
+            sigmas[:,i] = sig_mat[:,i+1]
+        group = dir[-1]
+        omega = dir[2:-2] if dir[2] != '0' else ('0+' if dir[2:5]=='0_p' else '0-')
+        signs = labels[group][omega]
+        for i in range(n):
+            if (signs[i][1] == 'p' and int(signs[i][2:]) > 7) or (signs[i][1] == 's' and int(signs[i][2:]) > 3):
+                eplot = np.linspace(np.min(e[np.argwhere(sigmas[:,i] != 0)]), np.max(e[np.argwhere(sigmas[:,i] != 0)]), 600)
+                spl = make_interp_spline(e[np.argwhere(sigmas[:,i] != 0)].transpose()[0], np.log10(sigmas[np.argwhere(sigmas[:,i] != 0),i].transpose()[0]))
+                sigmaplot = np.power(10, spl(eplot))
+                plt.plot(eplot-np.real(hls[-1,i,i]), sigmaplot*1.e14, ls=lines[omega], color=palette[signs[i]])
+    # plt.xlim(-100, np.min(np.array(emax))-np.min(np.array(emin))+300)
+    plt.grid(visible=False)
+    plt.xlabel('$E_{col}$, cm${}^{-1}$')
+    plt.ylabel('$\sigma_{d}$, $10^{-14}$ cm${}^{2}$')
+    if group == 'p':
+        legend1 = plt.legend(handles=ppatchst, loc=1)
+        plt.legend(handles=ppatchom, loc=9)
+        plt.gca().add_artist(legend1)
+    elif group == 's':
+        legend1 = plt.legend(handles=spatchst, loc=1)
+        plt.legend(handles=spatchom, loc=9)
+        plt.gca().add_artist(legend1)
+    plt.savefig(f'images/Diffuse_{group}.eps')
+    plt.close()
+
+
+def inelastic_plot(dirgroup):
+    emax = []
+    emin = []
+    for dir in dirgroup:
+        r, hls, ddrls = load_matrices(dir)
+        n = len(hls[0])
+        if n > 1:
+            sig_mat = np.loadtxt(f'{dir}/sigmas_total_new.txt', skiprows=1)
+            e = sig_mat[:,0]
+            emax.append(np.max(e))
+            emin.append(np.min(e[np.argwhere(sig_mat[:,2] != 0)]))
+            sigmas = np.zeros((len(e),n,n))
+            for i in range(n):
+                for j in range(n):
+                    sigmas[:,i,j] = sig_mat[:,i*n+j+1]
+            omega = dir[2:-2] if dir[2] != '0' else ('0+' if dir[2:5]=='0_p' else '0-')
+            group = dir[-1]
+            signs = labels[group][omega]
+            for i in range(n):
+                for j in range(n):
+                    if i != j:
+                        if (group == 'p' and int(signs[i][2:]) > 7 and int(signs[j][2:]) > 7) or (group == 's' and int(signs[i][2:]) > 3 and int(signs[j][2:]) > 3):
+                            sign = f'${{{signs[i][:2]}_{{{signs[i][2:]}}} \\rightarrow {signs[j][:2]}_{{{signs[j][2:]}}}}}$'
+                            eplot = np.linspace(np.min(e[np.argwhere(sigmas[:,i,j] != 0)]), np.max(e[np.argwhere(sigmas[:,i,j] != 0)]), 600)
+                            spl = make_interp_spline(e[np.argwhere(sigmas[:,i,j] != 0)].transpose()[0], np.log10(sigmas[np.argwhere(sigmas[:,i,j] != 0),i,j].transpose()[0]))
+                            sigmaplot = np.power(10, spl(eplot))
+                            plt.plot(eplot-np.real(hls[-1,i,i]), sigmaplot, label=f'{sign}, $\Omega={omega}$', linestyle=lines[omega])
+    plt.semilogy()
+    plt.xlabel('$E_{col}$, cm${}^{-1}$')
+    plt.ylabel('$\sigma$, cm${}^{2}$')
+    # plt.xlim(np.min(np.array(emin))-200, np.min(np.array(emax))+200)
+    if group == 'p':
+        plt.legend(ncol=2,fontsize=13)
+        # plt.legend(ncol=2)
+    else:
+        plt.legend()
+    # plt.show()
+    plt.savefig(f'images/Inelastic_{group}.eps')
+    plt.close()

@@ -2,5 +2,5 @@
 /.vscode
 /curve.py
 /num_solve.py
-__pycache__/*
+__pycache__/
 .ipynb_checkpoints/
