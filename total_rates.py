@@ -84,23 +84,29 @@ for i in range(len(p_labels)):
 
 np.savetxt(f'rate_const_p.txt', out_data_p, fmt='%.6e', delimiter='\t', header=header_p, comments='')
 
+colors = ['#a6cee3', '#1f78b4', '#b2df8a', '#33a02c', '#fb9a99', '#e31a1c',
+          '#fdbf6f', '#ff7f00', '#cab2d6', '#6a3d9a', '#ffff99', '#b15928']
 plt.rcParams['text.usetex'] = True
 plt.rcParams['font.size'] = 15
 plt.rcParams['image.cmap'] = 'Paired'
-plt.rcParams['axes.prop_cycle'] = cycler.cycler('color', ['#a6cee3', '#1f78b4', '#b2df8a', '#33a02c', '#fb9a99', '#e31a1c',
-                                                          '#fdbf6f', '#ff7f00', '#cab2d6', '#6a3d9a', '#ffff99', '#b15928'])
+plt.rcParams['axes.prop_cycle'] = cycler.cycler('color', colors)
 plt.rcParams['axes.formatter.use_mathtext'] = True
 plt.rcParams['figure.figsize'] = [8, 6]
 plt.rcParams['savefig.format'] = 'eps'
 plt.rcParams['lines.linewidth'] = 3
 
+colorid = 1
 for k in constants_s.keys():
     if k != 'T':
         states = k.split('-')
         states[1] = states[1][1:]
-        if (int(states[0][2:]) > 3) and (int(states[1][2:]) > 3):
-            sign = f'${{{states[0][:2]}_{{{states[0][2:]}}} \\rightarrow {states[1][:2]}_{{{states[1][2:]}}}}}$'
-            plt.plot(constants_s['T'], constants_s[k], label=sign)
+        if (int(states[0][2:]) > 3) and (int(states[1][2:]) > 3) and (int(states[1][2:]) > int(states[0][2:])):
+            krev = f'{states[1]}->{states[0]}'
+            sign = f'${{{states[1][:2]}_{{{states[1][2:]}}} \\rightarrow {states[0][:2]}_{{{states[0][2:]}}}}}$'
+            signrev = f'${{{states[0][:2]}_{{{states[0][2:]}}} \\rightarrow {states[1][:2]}_{{{states[1][2:]}}}}}$'
+            plt.plot(constants_s['T'], constants_s[krev], label=sign, color=colors[colorid], linestyle='-')
+            plt.plot(constants_s['T'], constants_s[k], label=signrev, color=colors[colorid], linestyle='--')
+            colorid += 2
 plt.semilogy()
 plt.legend()
 plt.xlabel('T, K')
@@ -108,13 +114,19 @@ plt.ylabel('k, cm${}^{3}$/s')
 plt.savefig(f'images/Rate_const_s.eps')
 plt.close()
 
+colorid = 1
+
 for k in constants_p.keys():
     if k != 'T':
         states = k.split('-')
         states[1] = states[1][1:]
-        if (int(states[0][2:]) > 7) and (int(states[1][2:]) > 7):
-            sign = f'${{{states[0][:2]}_{{{states[0][2:]}}} \\rightarrow {states[1][:2]}_{{{states[1][2:]}}}}}$'
-            plt.plot(constants_p['T'], constants_p[k], label=sign)
+        if (int(states[0][2:]) > 7) and (int(states[1][2:]) > 7) and (int(states[1][2:]) > int(states[0][2:])):
+            krev = f'{states[1]}->{states[0]}'
+            sign = f'${{{states[1][:2]}_{{{states[1][2:]}}} \\rightarrow {states[0][:2]}_{{{states[0][2:]}}}}}$'
+            signrev = f'${{{states[0][:2]}_{{{states[0][2:]}}} \\rightarrow {states[1][:2]}_{{{states[1][2:]}}}}}$'
+            plt.plot(constants_s['T'], constants_p[krev], label=sign, color=colors[colorid], linestyle='-')
+            plt.plot(constants_s['T'], constants_p[k], label=signrev, color=colors[colorid], linestyle='--')
+            colorid += 2
 plt.semilogy()
 plt.legend()
 plt.xlabel('T, K')

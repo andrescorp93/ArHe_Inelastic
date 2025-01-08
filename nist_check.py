@@ -36,7 +36,10 @@ for dir in dirs:
                 elabelarr[labels[group][omega][i]].extend([np.real(hls[-1,i,i]), np.real(hls[-1,i,i])])
             else:
                 elabelarr[labels[group][omega][i]].append(np.real(hls[-1,i,i]))
+calcs = {}
 errors = []
 for k, v in elabelarr.items():
+    calcs[k] = sum(v)/len(v)
     errors.append(np.abs((sum(v)/len(v))-nist_levels[k]))
 print(sum(errors)/len(errors))
+print(calcs)
