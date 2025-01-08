@@ -19,13 +19,12 @@ shift = np.array([emin*np.eye(len(hls[0]), dtype=complex)]*len(r))
 vd = (hls-shift)/4.637
 
 hfunc, ddrfunc = matrix_funcs(r, vd, ddrls)
-# es = np.array([1])
-# for i in range(n):
-#     emax = np.abs(np.array(hfunc(r[0])[i,i]))
-#     emin = np.abs(np.array(hfunc(r[-1])[i,i]))
-#     es = np.concatenate((es, np.power(10, np.arange(np.log10(emin if emin!=0 else 1), np.log10(emax), 0.01))))
-# es = np.unique(np.round(np.sort(es)))
-es = np.array([(106930.276-emin)/4.637])
+es = np.array([1])
+for i in range(n):
+    emax = np.abs(np.array(hfunc(r[0])[i,i]))
+    emin = np.abs(np.array(hfunc(r[-1])[i,i]))
+    es = np.concatenate((es, np.power(10, np.arange(np.log10(emin if emin!=0 else 1), np.log10(emax), 0.01))))
+es = np.unique(np.round(np.sort(es)))
 print(es)
 x = np.arange(np.min(r), np.max(r)+0.005, 0.005)
 sigmas = np.zeros((len(es), n, n))
@@ -77,4 +76,4 @@ for i in range(n):
     for j in range(n):
         tofile[:,i*n+j+1] = sigmas[:,i,j]
 
-# np.savetxt(f'{dir}/sigmas_total_exp.txt', tofile, fmt='%.6e', delimiter='\t', header=headerfinal, comments='')
+np.savetxt(f'{dir}/sigmas_total_exp.txt', tofile, fmt='%.6e', delimiter='\t', header=headerfinal, comments='')
