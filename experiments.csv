@@ -1,0 +1,20 @@
+Initial State,Final State,Collision Partner,Rate Constant (k_if^M),Total Removal (k_iT^M),Quenching (k_iq^M),Source,Notes
+2p_8,2p_9,Ar,1.1,1.7 ± 0.51,1.82,Optics Letters Table 1,Error ±30%
+2p_8,2p_10,Ar,1.1,-,0.1,Optics Letters Table 1,Error ±30%
+2p_8,Quenching,Ar,1.5,<3,-,Optics Letters Table 1,Error ±30%
+2p_9,2p_8,Ar,0.4,-,-,Optics Letters Table 1,Error ±30%
+2p_9,2p_10,Ar,2.6,-,-,Optics Letters Table 1,Error ±30%
+2p_9,Quenching,Ar,2.5,<3.5,-,Optics Letters Table 1,Error ±30%
+2p_10,^1S_0,Ar,0.6,2.0 ± 0.6,-,Optics Letters Table 1,Error ±30%
+2p_8,2p_9,He,4.5,-,-,Optics Letters Table 1,Error ±30%
+2p_8,2p_10,He,0.4,-,-,Optics Letters Table 1,Error ±30%
+2p_8,Quenching,He,<0.1,-,-,Optics Letters Table 1,Error ±30%
+2p_9,2p_8,He,1.5,-,-,Optics Letters Table 1,Error ±30%
+2p_9,2p_10,He,1.6,-,-,Optics Letters Table 1,Error ±30%
+2p_9,Quenching,He,0.2,-,-,Optics Letters Table 1,Error ±30%
+2p_6,2p_7 2p_8 2p_9 2p_10,He,10,-,-,Lebedev Bulletin Table 1,Pumping 1s_5 → 2p_8 or 2p_7
+2p_7,2p_8 2p_9,He,2,-,-,Lebedev Bulletin Table 1,Pumping 1s_5 → 2p_8
+2p_7,2p_8 2p_9,He,0.6,-,-,Lebedev Bulletin Table 1,Pumping 1s_5 → 2p_7
+2p_8,2p_9 2p_10,He,2,-,-,Lebedev Bulletin Table 1,Pumping 1s_5 → 2p_8 or 2p_7
+2p_9,2p_10,He,3,-,-,Lebedev Bulletin Table 1,Pumping 1s_5 → 2p_8 or 2p_7
+2p_6,2p_10,He,9,-,-,Lebedev Bulletin Page 5,Specific process for signal agreement

@@ -24,6 +24,11 @@ weights_states = {'1s5': 5, '1s4': 3, '1s3': 1, '1s2': 3,
                   '2p6': 5, '2p5': 1, '2p4': 3, '2p3': 5,
                   '2p2': 3, '2p1': 1}
 
+nist_energies = {'1s5':  93143.7600, '1s4':  93750.5978, '1s3':  94553.6652, '1s2':  95399.8276,
+                  '2p10':  104102.0990, '2p9':  105462.7596, '2p8':  105617.2700, '2p7':  106087.2598,
+                  '2p6':  106237.5518, '2p5':  107054.2720, '2p4':  107131.7086, '2p3':  107289.7001,
+                  '2p2':  107496.4166, '2p1':  108722.6194}
+
 weights_omegas = {'0-': 1, '0+': 1, '1': 2, '2': 2}
 
 colors = {'1s5': '#a6cee3',
@@ -46,12 +51,15 @@ lines = {'0+':'-',
          '0-':'--',
          '1':'-.',
          '2':':',
-         '3':(5, (10, 3))}
+         '3':(5, (10, 3)),
+         'nist': (0, (1, 1))}
 
-spatchom = [mlines.Line2D([], [], color='black', linestyle=lines[k], label=f'$\Omega = {k}$') for k in lines.keys() if int(k[0]) < 3]
-spatchst = [mlines.Line2D([], [], color=colors[k], linestyle='-', label=f'${k[:2]}_{{{k[2:]}}}$') for k in colors.keys() if int(k[2:]) > 3]
-ppatchom = [mlines.Line2D([], [], color='black', linestyle=lines[k], label=f'$\Omega = {k}$') for k in lines.keys()]
-ppatchst = [mlines.Line2D([], [], color=colorp[k], linestyle='-', label=f'${k[:2]}_{{{k[2:]}}}$') for k in colorp.keys() if int(k[2:]) > 7]
+spatchom = [mlines.Line2D([], [], color='black', linestyle=lines[k], label=f'$\Omega = {k}$') for k in lines.keys() if k != 'nist' and int(k[0]) < 3]
+spatchom.append(mlines.Line2D([], [], color='black', linestyle=lines['nist'], label='NIST'))
+spatchst = [mlines.Line2D([], [], color=colors[k], linestyle='-', label=f'${k[:2]}_{{{k[2:]}}}$') for k in colors.keys() if k != 'nist' and int(k[2:]) > 3]
+ppatchom = [mlines.Line2D([], [], color='black', linestyle=lines[k], label=f'$\Omega = {k}$') for k in lines.keys() if k != 'nist']
+ppatchom.append(mlines.Line2D([], [], color='black', linestyle=lines['nist'], label='NIST'))
+ppatchst = [mlines.Line2D([], [], color=colorp[k], linestyle='-', label=f'${k[:2]}_{{{k[2:]}}}$') for k in colorp.keys() if k != 'nist' and int(k[2:]) > 7]
 
 
 def model_potential(u0, eps, x):
@@ -351,6 +359,7 @@ def matrix_funcs(r, hls, ddrls):
 
 
 def energy_plot(dirgroup, palette):
+    plotstates = []
     for dir in dirgroup:
         r, hls, ddrls = load_matrices(dir)
         n = len(hls[0])
@@ -359,8 +368,10 @@ def energy_plot(dirgroup, palette):
         signs = labels[group][omega]
         for i in range(n):
             if (signs[i][1] == 'p' and int(signs[i][2:]) > 7) or (signs[i][1] == 's' and int(signs[i][2:]) > 3):
+                plotstates.append(signs[i])
                 plt.plot(r, np.real(hls[:,i,i]), ls=lines[omega], color=palette[signs[i]])
-
+    for s in set(plotstates):
+        plt.plot([np.min(r), np.max(r)], [nist_energies[s], nist_energies[s]], ls=lines['nist'], color=palette[s])
     plt.grid(visible=False)
     if group == 'p':
         legend1 = plt.legend(handles=ppatchst, loc=1)
@@ -372,7 +383,8 @@ def energy_plot(dirgroup, palette):
         plt.gca().add_artist(legend1)
     plt.xlabel('R, \AA')
     plt.ylabel('E, cm${}^{-1}$')
-    plt.savefig(f'images/Energies_{group}.eps')
+    # plt.show()
+    plt.savefig(f'images/Energies_{group}.pdf')
     plt.close()
 
 
@@ -508,7 +520,7 @@ def inelastic_plot(dirgroup):
         r, hls, ddrls = load_matrices(dir)
         n = len(hls[0])
         if n > 1:
-            sig_mat = np.loadtxt(f'{dir}/sigmas_total_new.txt', skiprows=1)
+            sig_mat = np.loadtxt(f'{dir}/sigmas_total_exp.txt', skiprows=1)
             e = sig_mat[:,0]
             emax.append(np.max(e))
             emin.append(np.min(e[np.argwhere(sig_mat[:,2] != 0)]))
@@ -538,5 +550,5 @@ def inelastic_plot(dirgroup):
     else:
         plt.legend()
     # plt.show()
-    plt.savefig(f'images/Inelastic_{group}.eps')
+    plt.savefig(f'images/Inelastic_{group}_EDWA.eps')
     plt.close()
