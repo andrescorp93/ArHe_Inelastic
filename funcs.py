@@ -1,6 +1,5 @@
 import numpy as np
 import os
-from numba import njit
 from scipy.special import spherical_jn as sph_jn, spherical_yn as sph_yn
 from scipy.interpolate import CubicSpline, make_interp_spline
 from scipy.integrate import solve_ivp
