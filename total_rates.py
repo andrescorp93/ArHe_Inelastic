@@ -32,7 +32,7 @@ for d in dirs:
     group = d[-1]
     omega = d[2:-2] if d[2] != '0' else ('0+' if d[2:5]=='0_p' else '0-')
     states = labels[group][omega]
-    data = np.loadtxt(f'{d}/rate_const_exp.txt', skiprows=1).transpose()
+    data = np.loadtxt(f'{d}/rate_const_airy.txt', skiprows=1).transpose()
     if 'T' not in constants.keys():
         constants['T'] = data[0]
     n = len(states)
@@ -73,7 +73,7 @@ for i in range(len(s_labels)):
                 out_data_s[:,col] = constants_s[k]
                 col += 1
 
-np.savetxt(f'rate_const_s_exp_rev.txt', out_data_s, fmt='%.6e', delimiter='\t', header=header_s, comments='')
+np.savetxt(f'rate_const_s_airy.txt', out_data_s, fmt='%.6e', delimiter='\t', header=header_s, comments='')
 
 p_labels = ['2p10', '2p9', '2p8', '2p7', '2p6', '2p5', '2p4', '2p3', '2p2', '2p1']
 header_p = 'T, K\t'
@@ -89,79 +89,79 @@ for i in range(len(p_labels)):
                 out_data_p[:,col] = constants_p[k]
                 col += 1
 
-np.savetxt(f'rate_const_p_exp_rev.txt', out_data_p, fmt='%.6e', delimiter='\t', header=header_p, comments='')
+np.savetxt(f'rate_const_p_airy.txt', out_data_p, fmt='%.6e', delimiter='\t', header=header_p, comments='')
 
-colors = ['#a6cee3', '#1f78b4', '#b2df8a', '#33a02c', '#fb9a99', '#e31a1c',
-          '#fdbf6f', '#ff7f00', '#cab2d6', '#6a3d9a', '#ffff99', '#b15928']
-plt.rcParams['text.usetex'] = True
-plt.rcParams['font.size'] = 15
-plt.rcParams['image.cmap'] = 'Paired'
-plt.rcParams['axes.prop_cycle'] = cycler.cycler('color', colors)
-plt.rcParams['axes.formatter.use_mathtext'] = True
-plt.rcParams['figure.figsize'] = [8, 6]
-plt.rcParams['savefig.format'] = 'pdf'
-plt.rcParams['lines.linewidth'] = 3
+# colors = ['#a6cee3', '#1f78b4', '#b2df8a', '#33a02c', '#fb9a99', '#e31a1c',
+#           '#fdbf6f', '#ff7f00', '#cab2d6', '#6a3d9a', '#ffff99', '#b15928']
+# plt.rcParams['text.usetex'] = True
+# plt.rcParams['font.size'] = 15
+# plt.rcParams['image.cmap'] = 'Paired'
+# plt.rcParams['axes.prop_cycle'] = cycler.cycler('color', colors)
+# plt.rcParams['axes.formatter.use_mathtext'] = True
+# plt.rcParams['figure.figsize'] = [8, 6]
+# plt.rcParams['savefig.format'] = 'pdf'
+# plt.rcParams['lines.linewidth'] = 3
 
-colorid = 1
-for k in constants_s.keys():
-    if k != 'T':
-        states = k.split('-')
-        states[1] = states[1][1:]
-        if (int(states[0][2:]) > 3) and (int(states[1][2:]) > 3) and (int(states[1][2:]) > int(states[0][2:])):
-            krev = f'{states[1]}->{states[0]}'
-            sign = f'${{{states[1][:2]}_{{{states[1][2:]}}} \\rightarrow {states[0][:2]}_{{{states[0][2:]}}}}}$'
-            signrev = f'${{{states[0][:2]}_{{{states[0][2:]}}} \\rightarrow {states[1][:2]}_{{{states[1][2:]}}}}}$'
-            for author in experiments.keys():
-                for trans in experiments[author]:
-                    if trans == k:
-                        print(trans)
-                        res = experiments[author][k]
-                        plt.scatter(res['T'], res['k'], label=f'{author}, {sign}', color=colors[colorid], marker=res['marker'])
-                    elif trans == krev:
-                        res = experiments[author][krev]
-                        plt.scatter(res['T'], res['k'], label=f'{author}, {sign}', color=colors[colorid], marker=res['marker'])
-            plt.plot(constants_s['T'], constants_s[krev], label=sign, color=colors[colorid], linestyle='-')
-            plt.plot(constants_s['T'], constants_s[k], label=signrev, color=colors[colorid], linestyle='--')
-            colorid += 2
-plt.semilogy()
-plt.legend()
-plt.xlabel('T, K')
-plt.ylabel('k, cm${}^{3}$/s')
-plt.savefig(f'images/Figure_7_rev.pdf')
-plt.close()
+# colorid = 1
+# for k in constants_s.keys():
+#     if k != 'T':
+#         states = k.split('-')
+#         states[1] = states[1][1:]
+#         if (int(states[0][2:]) > 3) and (int(states[1][2:]) > 3) and (int(states[1][2:]) > int(states[0][2:])):
+#             krev = f'{states[1]}->{states[0]}'
+#             sign = f'${{{states[1][:2]}_{{{states[1][2:]}}} \\rightarrow {states[0][:2]}_{{{states[0][2:]}}}}}$'
+#             signrev = f'${{{states[0][:2]}_{{{states[0][2:]}}} \\rightarrow {states[1][:2]}_{{{states[1][2:]}}}}}$'
+#             for author in experiments.keys():
+#                 for trans in experiments[author]:
+#                     if trans == k:
+#                         print(trans)
+#                         res = experiments[author][k]
+#                         plt.scatter(res['T'], res['k'], label=f'{author}, {sign}', color=colors[colorid], marker=res['marker'])
+#                     elif trans == krev:
+#                         res = experiments[author][krev]
+#                         plt.scatter(res['T'], res['k'], label=f'{author}, {sign}', color=colors[colorid], marker=res['marker'])
+#             plt.plot(constants_s['T'], constants_s[krev], label=sign, color=colors[colorid], linestyle='-')
+#             plt.plot(constants_s['T'], constants_s[k], label=signrev, color=colors[colorid], linestyle='--')
+#             colorid += 2
+# plt.semilogy()
+# plt.legend()
+# plt.xlabel('T, K')
+# plt.ylabel('k, cm${}^{3}$/s')
+# plt.savefig(f'images/Figure_7_rev.pdf')
+# plt.close()
 
-plt.rcParams['figure.figsize'] = [10, 7]
-colorid = 1
+# plt.rcParams['figure.figsize'] = [10, 7]
+# colorid = 1
 
-for k in constants_p.keys():
-    if k != 'T':
-        states = k.split('-')
-        states[1] = states[1][1:]
-        if (int(states[0][2:]) > 7) and (int(states[1][2:]) > 7) and (int(states[1][2:]) > int(states[0][2:])):
-            krev = f'{states[1]}->{states[0]}'
-            sign = f'${{{states[1][:2]}_{{{states[1][2:]}}} \\rightarrow {states[0][:2]}_{{{states[0][2:]}}}}}$'
-            signrev = f'${{{states[0][:2]}_{{{states[0][2:]}}} \\rightarrow {states[1][:2]}_{{{states[1][2:]}}}}}$'
-            for author in experiments.keys():
-                for trans in experiments[author]:
-                    if trans == k:
-                        res = experiments[author][k]
-                        states_exp = k.split('-')
-                        states_exp[1] = states_exp[1][1:]
-                        sign_exp = f'${{{states_exp[0][:2]}_{{{states_exp[0][2:]}}} \\rightarrow {states_exp[1][:2]}_{{{states_exp[1][2:]}}}}}$'
-                        plt.scatter(res['T'], res['k'], label=f'{author}, {sign_exp}', color=colors[colorid], marker=res['marker'])
-                    elif trans == krev:
-                        res = experiments[author][krev]
-                        states_exp = krev.split('-')
-                        states_exp[1] = states_exp[1][1:]
-                        sign_exp = f'${{{states_exp[0][:2]}_{{{states_exp[0][2:]}}} \\rightarrow {states_exp[1][:2]}_{{{states_exp[1][2:]}}}}}$'
-                        plt.scatter(res['T'], res['k'], label=f'{author}, {sign_exp}', color=colors[colorid], marker=res['marker'])
-            plt.plot(constants_s['T'], constants_p[krev], label=sign, color=colors[colorid], linestyle='-')
-            plt.plot(constants_s['T'], constants_p[k], label=signrev, color=colors[colorid], linestyle='--')
-            colorid += 2
-plt.semilogy()
-plt.legend(ncol=3, columnspacing=0.6)
-plt.xlabel('T, K')
-plt.ylabel('k, cm${}^{3}$/s')
-# plt.show()
-plt.savefig(f'images/Figure_8_rev.pdf')
-plt.close()
+# for k in constants_p.keys():
+#     if k != 'T':
+#         states = k.split('-')
+#         states[1] = states[1][1:]
+#         if (int(states[0][2:]) > 7) and (int(states[1][2:]) > 7) and (int(states[1][2:]) > int(states[0][2:])):
+#             krev = f'{states[1]}->{states[0]}'
+#             sign = f'${{{states[1][:2]}_{{{states[1][2:]}}} \\rightarrow {states[0][:2]}_{{{states[0][2:]}}}}}$'
+#             signrev = f'${{{states[0][:2]}_{{{states[0][2:]}}} \\rightarrow {states[1][:2]}_{{{states[1][2:]}}}}}$'
+#             for author in experiments.keys():
+#                 for trans in experiments[author]:
+#                     if trans == k:
+#                         res = experiments[author][k]
+#                         states_exp = k.split('-')
+#                         states_exp[1] = states_exp[1][1:]
+#                         sign_exp = f'${{{states_exp[0][:2]}_{{{states_exp[0][2:]}}} \\rightarrow {states_exp[1][:2]}_{{{states_exp[1][2:]}}}}}$'
+#                         plt.scatter(res['T'], res['k'], label=f'{author}, {sign_exp}', color=colors[colorid], marker=res['marker'])
+#                     elif trans == krev:
+#                         res = experiments[author][krev]
+#                         states_exp = krev.split('-')
+#                         states_exp[1] = states_exp[1][1:]
+#                         sign_exp = f'${{{states_exp[0][:2]}_{{{states_exp[0][2:]}}} \\rightarrow {states_exp[1][:2]}_{{{states_exp[1][2:]}}}}}$'
+#                         plt.scatter(res['T'], res['k'], label=f'{author}, {sign_exp}', color=colors[colorid], marker=res['marker'])
+#             plt.plot(constants_s['T'], constants_p[krev], label=sign, color=colors[colorid], linestyle='-')
+#             plt.plot(constants_s['T'], constants_p[k], label=signrev, color=colors[colorid], linestyle='--')
+#             colorid += 2
+# plt.semilogy()
+# plt.legend(ncol=3, columnspacing=0.6)
+# plt.xlabel('T, K')
+# plt.ylabel('k, cm${}^{3}$/s')
+# # plt.show()
+# plt.savefig(f'images/Figure_8_rev.pdf')
+# plt.close()
