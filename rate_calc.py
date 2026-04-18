@@ -1,7 +1,7 @@
 import numpy as np
 import matplotlib.pyplot as plt
 from funcs import *
-from scipy.integrate import simps, trapezoid
+from scipy.integrate import simpson, trapezoid
 
 cm1toK = 1.43841 # hc/kB
 velcoeff = 3534.19 # sqrt(3kB/mu)
@@ -17,7 +17,7 @@ for dir in dirs:
 
     thres = np.loadtxt(f'{dir}/{dir}_diag.txt', skiprows=1)[-1,1:]
 
-    sig_mat = np.loadtxt(f'{dir}/sigmas_total_airy.txt', skiprows=1)
+    sig_mat = np.loadtxt(f'{dir}/sigmas_total_airy_detailed.txt', skiprows=1)
 
     e = sig_mat[:,0]
     sigmas = np.zeros((len(e),n,n))
@@ -54,7 +54,7 @@ for dir in dirs:
                 tofile[:,m+1] = coeffs[:,i,j]
                 m += 1
 
-    np.savetxt(f'{dir}/rate_const_airy.txt', tofile, fmt='%.6e', delimiter='\t', header=headerfinal, comments='')
+    np.savetxt(f'{dir}/rate_const_airy_detailed.txt', tofile, fmt='%.6e', delimiter='\t', header=headerfinal, comments='')
 # for i in range(n):
 #     for j in range(i+1, n):
 #         plt.plot(1/temperatures, coeffs[:,i,j], label=f'{i}->{j}')
