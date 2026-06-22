@@ -17,7 +17,7 @@ for dir in dirs:
 
     thres = np.loadtxt(f'{dir}/{dir}_diag.txt', skiprows=1)[-1,1:]
 
-    sig_mat = np.loadtxt(f'{dir}/sigmas_total_airy_detailed.txt', skiprows=1)
+    sig_mat = np.loadtxt(f'{dir}/sigmas_total_airy_redetailed.txt', skiprows=1)
 
     e = sig_mat[:,0]
     sigmas = np.zeros((len(e),n,n))
@@ -43,7 +43,7 @@ for dir in dirs:
             for j in range(n):
                 if i != j:
                     # coeffs[t,i,j] = simps(maxwell(thetas[:,i], temperatures[t])*vels[:,i]*sigmas[:,i,j],thetas[:,i])
-                    coeffs[t,i,j] = trapezoid(maxwell(thetas[sigmas[:,j,i] < 0.1,i], temperatures[t])*vels[sigmas[:,j,i] < 1,i]*sigmas[sigmas[:,j,i] < 1,j,i],thetas[sigmas[:,j,i] < 1,i])
+                    coeffs[t,i,j] = trapezoid(maxwell(thetas[sigmas[:,j,i] < 0.01,i], temperatures[t])*vels[sigmas[:,j,i] < 0.01,i]*sigmas[sigmas[:,j,i] < 0.01,j,i],thetas[sigmas[:,j,i] < 0.01,i])
 
     tofile = np.zeros((len(temperatures), n*(n-1)+1))
     tofile[:,0] = temperatures
@@ -54,7 +54,7 @@ for dir in dirs:
                 tofile[:,m+1] = coeffs[:,i,j]
                 m += 1
 
-    np.savetxt(f'{dir}/rate_const_airy_detailed.txt', tofile, fmt='%.6e', delimiter='\t', header=headerfinal, comments='')
+    np.savetxt(f'{dir}/rate_const_airy_redetailed.txt', tofile, fmt='%.6e', delimiter='\t', header=headerfinal, comments='')
 # for i in range(n):
 #     for j in range(i+1, n):
 #         plt.plot(1/temperatures, coeffs[:,i,j], label=f'{i}->{j}')

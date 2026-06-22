@@ -54,11 +54,11 @@ lines = {'0+':'-',
          'nist': (0, (1, 1))}
 
 spatchom = [mlines.Line2D([], [], color='black', linestyle=lines[k], label=f'$\Omega = {k}$') for k in lines.keys() if k != 'nist' and int(k[0]) < 3]
-spatchom.append(mlines.Line2D([], [], color='black', linestyle=lines['nist'], label='NIST'))
+# spatchom.append(mlines.Line2D([], [], color='black', linestyle=lines['nist'], label='NIST'))
 spatchst = [mlines.Line2D([], [], color=colors[k], linestyle='-', label=f'${k[:2]}_{{{k[2:]}}}$') for k in colors.keys() if k != 'nist' and int(k[2:]) > 3]
 ppatchom = [mlines.Line2D([], [], color='black', linestyle=lines[k], label=f'$\Omega = {k}$') for k in lines.keys() if k != 'nist']
-ppatchom.append(mlines.Line2D([], [], color='black', linestyle=lines['nist'], label='NIST'))
-ppatchst = [mlines.Line2D([], [], color=colorp[k], linestyle='-', label=f'${k[:2]}_{{{k[2:]}}}$') for k in colorp.keys() if k != 'nist' and int(k[2:]) > 7]
+# ppatchom.append(mlines.Line2D([], [], color='black', linestyle=lines['nist'], label='NIST'))
+ppatchst = [mlines.Line2D([], [], color=colorp[k], linestyle='-', label=f'${k[:2]}_{{{k[2:]}}}$') for k in colorp.keys() if k != 'nist' and int(k[2:]) > 5]
 
 
 def model_potential(u0, eps, x):
@@ -441,7 +441,7 @@ def elastic_plot(dirgroup, palette):
     for dir in dirgroup:
         r, hls, ddrls = load_matrices(dir)
         n = len(hls[0])
-        sig_mat = np.loadtxt(f'{dir}/sigmas_total_new.txt', skiprows=1)
+        sig_mat = np.loadtxt(f'{dir}/sigmas_total_airy_redetailed.txt', skiprows=1)
         e = sig_mat[:,0]
         emax.append(np.max(e))
         emin.append(np.min(e))
@@ -453,13 +453,15 @@ def elastic_plot(dirgroup, palette):
         omega = dir[2:-2] if dir[2] != '0' else ('0+' if dir[2:5]=='0_p' else '0-')
         signs = labels[group][omega]
         for i in range(n):
-            if (signs[i][1] == 'p' and int(signs[i][2:]) > 7) or (signs[i][1] == 's' and int(signs[i][2:]) > 3):
+            if (signs[i][1] == 'p' and int(signs[i][2:]) > 5) or (signs[i][1] == 's' and int(signs[i][2:]) > 3):
                 eplot = np.linspace(np.min(e[np.argwhere(sigmas[:,i,i] != 0)]), np.max(e[np.argwhere(sigmas[:,i,i] != 0)]), 600)
                 spl = make_interp_spline(e[np.argwhere(sigmas[:,i,i] != 0)].transpose()[0], np.log10(sigmas[np.argwhere(sigmas[:,i,i] != 0),i,i].transpose()[0]))
                 sigmaplot = np.power(10, spl(eplot))
                 plt.plot(eplot-np.real(hls[-1,i,i]), sigmaplot*1.e14, ls=lines[omega], color=palette[signs[i]])
     # plt.xlim(-100, np.min(np.array(emax))-np.min(np.array(emin))+300)
     plt.grid(visible=False)
+    # plt.semilogx()
+    # plt.semilogy()
     plt.xlabel('$E_{col}$, cm${}^{-1}$')
     plt.ylabel('$\sigma_{t}$, $10^{-14}$ cm${}^{2}$')
     if group == 'p':
@@ -470,8 +472,9 @@ def elastic_plot(dirgroup, palette):
         legend1 = plt.legend(handles=spatchst, loc=1)
         plt.legend(handles=spatchom, loc=9)
         plt.gca().add_artist(legend1)
-    plt.savefig(f'images/Elastic_{group}.eps')
-    plt.close()
+    plt.show()
+    # plt.savefig(f'images/Elastic_{group}_Airy.eps')
+    # plt.close()
 
 
 def diffuse_plot(dirgroup, palette):

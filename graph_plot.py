@@ -15,15 +15,15 @@ plt.rcParams['axes.prop_cycle'] = cycler.cycler('color', ['#a6cee3', '#1f78b4', 
 plt.rcParams['axes.formatter.use_mathtext'] = True
 plt.rcParams['figure.figsize'] = [8, 6]
 plt.rcParams['savefig.format'] = 'pdf'
-plt.rcParams['lines.linewidth'] = 3
+plt.rcParams['lines.linewidth'] = 2
 
-energy_plot(dirs, colors)
-energy_plot(dirp, colorp)
+# energy_plot(dirs, colors)
+# energy_plot(dirp, colorp)
 # so_plot(dirs)
 # so_plot(dirp)
 # ddr_plot(dirp)
 # elastic_plot(dirs, colors)
-# elastic_plot(dirp, colorp)
+elastic_plot(dirp, colorp)
 # diffuse_plot(dirs, colors)
 # diffuse_plot(dirp, colorp)
 # inelastic_plot(dirs)
